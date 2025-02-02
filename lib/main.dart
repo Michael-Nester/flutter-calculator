@@ -1,35 +1,35 @@
-import 'package:flutter/material.dart';
+// Added memory functionality to store and recall values
 import 'package:expressions/expressions.dart';
+import 'package:flutter/material.dart';
 
 void main() {
   runApp(const CalculatorApp());
 }
 
 class CalculatorApp extends StatelessWidget {
-  const CalculatorApp({super.key});
+  const CalculatorApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Your Name - Calculator',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
+      title: 'Calculator - Your Name',
+      theme: ThemeData.dark(),
       home: const CalculatorScreen(),
     );
   }
 }
 
 class CalculatorScreen extends StatefulWidget {
-  const CalculatorScreen({super.key});
+  const CalculatorScreen({Key? key}) : super(key: key);
 
   @override
-  State<CalculatorScreen> createState() => _CalculatorScreenState();
+  _CalculatorScreenState createState() => _CalculatorScreenState();
 }
 
 class _CalculatorScreenState extends State<CalculatorScreen> {
   String _expression = '';
   String _result = '';
+  double? _memory; // Added memory variable
 
   void _onButtonPressed(String value) {
     setState(() {
@@ -40,10 +40,16 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         try {
           final exp = Expression.parse(_expression);
           final evaluator = const ExpressionEvaluator();
-          final evalResult = evaluator.eval(exp, {});
-          _result = evalResult.toString();
+          _result = evaluator.eval(exp, {}).toString();
+          _expression += ' = $_result';
         } catch (e) {
           _result = 'Error';
+        }
+      } else if (value == 'M+') {
+        _memory = double.tryParse(_result);
+      } else if (value == 'MR') {
+        if (_memory != null) {
+          _expression += _memory.toString();
         }
       } else {
         _expression += value;
@@ -53,18 +59,9 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
 
   Widget _buildButton(String text) {
     return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: ElevatedButton(
-          onPressed: () => _onButtonPressed(text),
-          style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.all(20.0),
-          ),
-          child: Text(
-            text,
-            style: const TextStyle(fontSize: 24),
-          ),
-        ),
+      child: ElevatedButton(
+        onPressed: () => _onButtonPressed(text),
+        child: Text(text, style: const TextStyle(fontSize: 24)),
       ),
     );
   }
@@ -72,31 +69,37 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Your Name - Calculator')),
+      appBar: AppBar(title: const Text('Calculator - Your Name')),
       body: Column(
         children: [
           Expanded(
             child: Container(
-              alignment: Alignment.bottomRight,
               padding: const EdgeInsets.all(16),
+              alignment: Alignment.centerRight,
               child: Text(
-                '$_expression\n$_result',
+                _expression,
                 style: const TextStyle(fontSize: 32),
-                textAlign: TextAlign.right,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              alignment: Alignment.centerRight,
+              child: Text(
+                _result,
+                style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
               ),
             ),
           ),
           Column(
             children: [
-              ['7', '8', '9', '/'],
-              ['4', '5', '6', '*'],
-              ['1', '2', '3', '-'],
-              ['C', '0', '=', '+'],
-            ].map((row) {
-              return Row(
-                children: row.map((text) => _buildButton(text)).toList(),
-              );
-            }).toList(),
+              Row(children: ['7', '8', '9', '/'].map(_buildButton).toList()),
+              Row(children: ['4', '5', '6', '*'].map(_buildButton).toList()),
+              Row(children: ['1', '2', '3', '-'].map(_buildButton).toList()),
+              Row(children: ['0', 'C', '=', '+'].map(_buildButton).toList()),
+              Row(children: ['M+', 'MR'].map(_buildButton).toList()), // Added memory buttons
+            ],
           ),
         ],
       ),
